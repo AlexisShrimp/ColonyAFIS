@@ -130,6 +130,10 @@
       </label>
       <label class="check" style="align-self:end"><input type="checkbox" id="cfgC" checked> Lire la carte d'état</label>
     </div>
+    <label style="margin-top:8px">Suiveur de ligne (arrêt auto en cas de sortie)
+      <select id="cfgL"><option value="0">Désactivé</option><option value="5">Port 5</option><option value="8">Port 8</option></select>
+    </label>
+    <p class="hint">Port inconnu ? Bouton « Test suiveur de ligne » dans Tests : passe le capteur du blanc au noir, le port dont la valeur change est le bon.</p>
     <div class="row" style="margin-top:10px"><button class="primary" id="sendCfg">Envoyer la configuration</button></div>
     <p class="hint" id="cfgEcho">Configuration confirmée par le robot : —</p>
     <div class="row" style="margin-top:10px">
@@ -189,7 +193,7 @@
       <button data-cmd="3">Gauche 90°</button><button data-cmd="4">Droite 90°</button><button data-cmd="i">État</button>
       <button data-cmd="1">Calib. 50 cm</button><button data-cmd="2">Calib. 360°</button><button data-cmd="g">Sonder gisements</button>
       <button data-cmd="v">Test ultrason</button><button data-cmd="n">Test couleur</button><button data-cmd="?">Aide</button>
-      <button data-cmd="p">Test saisie</button><button data-cmd="e">Test dépose</button>
+      <button data-cmd="p">Test saisie</button><button data-cmd="e">Test dépose</button><button data-cmd="k">Test suiveur de ligne</button>
     </div>
   </details>
 
@@ -238,7 +242,7 @@ const saved = store.get("cfg", null);
 if (saved) {
   $("cfgD").value = saved.D; $("cfgS").value = saved.S; $("cfgSUnknown").checked = saved.SU;
   document.querySelectorAll(".gis").forEach((s, i) => s.value = saved.G[i] || "?");
-  $("cfgO").value = saved.O; $("cfgC").checked = saved.C;
+  $("cfgO").value = saved.O; $("cfgC").checked = saved.C; $("cfgL").value = saved.L || "0";
 } else { $("cfgD").value = 8; }
 $("cfgSUnknown").addEventListener("change", () => $("cfgS").disabled = $("cfgSUnknown").checked);
 $("cfgS").disabled = $("cfgSUnknown").checked;
@@ -246,10 +250,10 @@ $("cfgS").disabled = $("cfgSUnknown").checked;
 $("sendCfg").addEventListener("click", () => {
   const G = [...document.querySelectorAll(".gis")].map(s => s.value);
   const cfg = { D: +$("cfgD").value, S: Math.max(0, Math.min(100, +$("cfgS").value || 0)), SU: $("cfgSUnknown").checked,
-                G, O: +$("cfgO").value || 0, C: $("cfgC").checked };
+                G, O: +$("cfgO").value || 0, C: $("cfgC").checked, L: $("cfgL").value };
   store.set("cfg", cfg);
   // une ligne par parametre (paquets BLE de 20 octets max)
-  [`#D=${cfg.D}`, `#S=${cfg.SU ? "?" : cfg.S}`, `#G=${G.join("")}`, `#O=${cfg.O}`, `#C=${cfg.C ? 1 : 0}`]
+  [`#D=${cfg.D}`, `#S=${cfg.SU ? "?" : cfg.S}`, `#G=${G.join("")}`, `#O=${cfg.O}`, `#C=${cfg.C ? 1 : 0}`, `#L=${cfg.L}`]
     .forEach(l => send(l + "\n"));
   addEvent("Configuration envoyée");
 });
