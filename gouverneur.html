@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>ColonyAFIS - Gouverneur</title>
+<style>
+  :root {
+    --bg: #111418; --card: #1b2027; --line: #2b323c; --txt: #e8ecf1; --dim: #8b95a3;
+    --red: #e5484d; --green: #30a46c; --yellow: #f5d90a; --orange: #f76b15; --blue: #3e8ed0;
+    --crit: #b4232a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: env(safe-area-inset-top) 0 calc(150px + env(safe-area-inset-bottom)); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  header h1 { font-size: 16px; margin: 0; flex: 1; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 99px; background: #333a44; white-space: nowrap; }
+  .pill.ok { background: var(--green); color: #fff; } .pill.ko { background: var(--red); color: #fff; }
+  main { padding: 12px; max-width: 720px; margin: 0 auto; display: grid; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 0 0 10px; }
+  button { font: inherit; color: var(--txt); background: #2c333d; border: 1px solid #3a424e; border-radius: 12px;
+    padding: 12px 14px; min-height: 48px; cursor: pointer; }
+  button:active { transform: scale(.98); }
+  button:disabled { opacity: .35; }
+  button.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+  button.go { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; } .row > * { flex: 1 1 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  label { display: grid; gap: 4px; font-size: 13px; color: var(--dim); }
+  select, input[type=number], input[type=text] { font: inherit; color: var(--txt); background: #12161b;
+    border: 1px solid #3a424e; border-radius: 10px; padding: 10px; min-height: 44px; width: 100%; }
+  .check { display: flex; align-items: center; gap: 8px; color: var(--txt); font-size: 14px; }
+  .check input { width: 22px; height: 22px; }
+  .kpi { background: #12161b; border-radius: 10px; padding: 8px 10px; }
+  .kpi .k { font-size: 11px; color: var(--dim); text-transform: uppercase; }
+  .kpi .v { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .etat { border-radius: 10px; padding: 10px; text-align: center; font-weight: 700; font-size: 18px; }
+  .e-STABLE { background: var(--green); } .e-ALERTE { background: var(--yellow); color: #222; }
+  .e-CRISE { background: var(--orange); } .e-CRITIQUE { background: var(--crit); }
+  .e-EFFONDREMENT { background: #000; border: 1px solid #555; } .e-INCONNU { background: #333a44; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: center; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 11px; color: var(--dim); font-weight: 500; text-transform: uppercase; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .w { background: #3e8ed0; } .en { background: #f5d90a; } .m { background: #e5484d; }
+  .full { color: var(--green); font-weight: 700; }
+  #events { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; font-size: 14px; }
+  #events li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  #events .t { color: var(--dim); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  #events .alerte { color: #ff8b8b; font-weight: 600; } #events .infra { color: #6fe0a0; font-weight: 600; }
+  #log { font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; background: #0b0d10; border-radius: 10px;
+    padding: 8px; height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: #b9c2cd; }
+  details summary { cursor: pointer; color: var(--dim); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; padding: 4px 0; }
+  .hint { font-size: 13px; color: var(--dim); margin: 6px 0 0; }
+  .warn { background: #3a2a10; border: 1px solid #7a5a1a; color: #ffd38a; border-radius: 10px; padding: 10px; font-size: 14px; }
+  #pauseBox { display: none; background: #3a1214; border: 2px solid var(--red); }
+  #pauseBox.show { display: block; }
+  #pauseBox h2 { color: #ffb4b4; }
+  /* barre d'arret d'urgence, toujours visible */
+  #stopbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: rgba(17,20,24,.96);
+    border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  #stopbar .inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+  #stopBtn { background: var(--red); border-color: #ff6b70; color: #fff; font-size: 22px; font-weight: 800;
+    min-height: 96px; border-radius: 16px; letter-spacing: .04em; }
+  #resumeBtn { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; font-size: 17px; border-radius: 16px; }
+  .running-only { display: none; } body.running .running-only { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ColonyAFIS · Gouverneur</h1>
+  <span id="conn" class="pill ko">Déconnecté</span>
+</header>
+
+<main>
+  <div id="noBt" class="warn" hidden></div>
+
+  <!-- Connexion -->
+  <section class="card">
+    <h2>Connexion au robot</h2>
+    <div class="row">
+      <button class="primary" id="btConnect">Connecter (Bluetooth)</button>
+      <button id="btDisconnect" disabled>Déconnecter</button>
+    </div>
+    <label class="check" style="margin-top:10px"><input type="checkbox" id="showAll"> Afficher tous les appareils Bluetooth</label>
+    <div class="row" style="margin-top:8px"><button id="demoBtn">Mode démo (sans robot)</button></div>
+    <p class="hint">Robot allumé avec son module Bluetooth. Ne PAS l'appairer dans les réglages du téléphone : la connexion se fait ici.</p>
+  </section>
+
+  <!-- Pause -->
+  <section class="card" id="pauseBox">
+    <h2>Robot en pause · arrêt d'urgence</h2>
+    <p style="margin:0 0 10px">Le mainteneur peut intervenir. Choisis comment reprendre :</p>
+    <div class="grid2">
+      <button class="go" data-cmd="r">Reprendre sur place</button>
+      <button data-cmd="h">Replacé au départ (sans cube)</button>
+      <button data-cmd="j">Replacé au départ (avec cube)</button>
+      <button data-cmd="f">Arrêter la manche</button>
+    </div>
+  </section>
+
+  <!-- Préparation -->
+  <section class="card" id="prep">
+    <h2>Avant le départ</h2>
+    <div class="grid2">
+      <label>Durée annoncée
+        <select id="cfgD"></select>
+      </label>
+      <label>Stabilité initiale
+        <input type="number" id="cfgS" min="0" max="100" value="80" inputmode="numeric">
+      </label>
+    </div>
+    <label class="check" style="margin:8px 0"><input type="checkbox" id="cfgSUnknown"> Stabilité inconnue (le robot lira la carte)</label>
+    <div class="grid3">
+      <label>Gisement gauche <select class="gis"></select></label>
+      <label>Gisement milieu <select class="gis"></select></label>
+      <label>Gisement droit <select class="gis"></select></label>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      <label>Dégradation adverse (pts/min)
+        <input type="number" id="cfgO" min="0" max="30" step="0.5" value="3" inputmode="decimal">
+      </label>
+      <label class="check" style="align-self:end"><input type="checkbox" id="cfgC" checked> Lire la carte d'état</label>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="sendCfg">Envoyer la configuration</button></div>
+    <p class="hint" id="cfgEcho">Configuration confirmée par le robot : —</p>
+    <div class="row" style="margin-top:10px">
+      <button data-cmd="z">Bras levé : initialiser</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="go" data-cmd="s">▶ Lancer la manche</button>
+      <button class="go" data-cmd="t">▶ Auto-test</button>
+    </div>
+  </section>
+
+  <!-- Suivi -->
+  <section class="card">
+    <h2>État d'exécution</h2>
+    <div id="etat" class="etat e-INCONNU">Territoire : inconnu</div>
+    <div class="grid3" style="margin-top:8px">
+      <div class="kpi"><div class="k">Mode</div><div class="v" id="kMode" style="font-size:15px">—</div></div>
+      <div class="kpi"><div class="k">Temps</div><div class="v" id="kTime">0:00</div></div>
+      <div class="kpi"><div class="k">Score estimé</div><div class="v" id="kScore">0</div></div>
+      <div class="kpi"><div class="k">Stabilité</div><div class="v" id="kS">—</div></div>
+      <div class="kpi"><div class="k">Cube porté</div><div class="v" id="kCube" style="font-size:15px">—</div></div>
+      <div class="kpi"><div class="k">Position</div><div class="v" id="kPos" style="font-size:14px">—</div></div>
+    </div>
+    <div class="kpi" style="margin-top:8px"><div class="k">Cible actuelle</div><div class="v" id="kTarget" style="font-size:15px">—</div></div>
+  </section>
+
+  <section class="card">
+    <h2>Ressources collectées</h2>
+    <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="k"><span class="dot w"></span>Eau</div><div class="v" id="rW">0</div></div>
+      <div class="kpi"><div class="k"><span class="dot en"></span>Énergie</div><div class="v" id="rE">0</div></div>
+      <div class="kpi"><div class="k"><span class="dot m"></span>Matériaux</div><div class="v" id="rM">0</div></div>
+    </div>
+    <p class="hint" id="lastRes">Dernière ressource détectée : —</p>
+  </section>
+
+  <section class="card">
+    <h2>Infrastructures</h2>
+    <table>
+      <thead><tr><th>Zone</th><th><span class="dot w"></span></th><th><span class="dot en"></span></th><th><span class="dot m"></span></th><th>Construites</th></tr></thead>
+      <tbody id="infra"></tbody>
+    </table>
+    <p class="hint">Colonnes : cubes déposés / cubes nécessaires pour l'infrastructure en cours.</p>
+  </section>
+
+  <section class="card">
+    <h2>Événements</h2>
+    <ul id="events"></ul>
+  </section>
+
+  <details class="card">
+    <summary>Tests et calibration (robot au repos)</summary>
+    <div class="grid3" style="margin-top:10px">
+      <button data-cmd="u">Bras ↑</button><button data-cmd="x">Bras stop</button><button data-cmd="d">Bras ↓</button>
+      <button data-cmd="o">Pince ouvrir</button><button data-cmd="c">Pince fermer</button><button data-cmd="z">Bras = origine</button>
+      <button data-cmd="w">Avancer 20 cm</button><button data-cmd="b">Reculer 20 cm</button><button data-cmd="0">Pos. = départ</button>
+      <button data-cmd="3">Gauche 90°</button><button data-cmd="4">Droite 90°</button><button data-cmd="i">État</button>
+      <button data-cmd="1">Calib. 50 cm</button><button data-cmd="2">Calib. 360°</button><button data-cmd="g">Sonder gisements</button>
+      <button data-cmd="v">Test ultrason</button><button data-cmd="n">Test couleur</button><button data-cmd="?">Aide</button>
+      <button data-cmd="p">Test saisie</button><button data-cmd="e">Test dépose</button>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Journal brut</summary>
+    <div id="log" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="raw" placeholder="Commande libre (ex : #D=8)" autocomplete="off">
+      <button id="rawSend" style="flex:0 0 auto">Envoyer</button>
+    </div>
+  </details>
+</main>
+
+<div id="stopbar">
+  <div class="inner">
+    <button id="stopBtn">ARRÊT D'URGENCE</button>
+    <button id="resumeBtn">Reprise</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- Constantes du protocole ColonyAFIS ---------- */
+// Module Bluetooth Makeblock (BLE) : service FFE1, notification FFE2, ecriture FFE3
+const BLE_SERVICES = [0xffe1, 0xffe0, 0xffe5];
+const NOTIFY_UUIDS = ["0000ffe2-0000-1000-8000-00805f9b34fb", "0000ffe1-0000-1000-8000-00805f9b34fb", "0000ffe4-0000-1000-8000-00805f9b34fb"];
+const WRITE_UUIDS  = ["0000ffe3-0000-1000-8000-00805f9b34fb", "0000ffe1-0000-1000-8000-00805f9b34fb", "0000ffe9-0000-1000-8000-00805f9b34fb"];
+const ZONES = ["HABITAT", "FERME", "INDUSTRIE", "RECYCLAGE"];
+const RECIPE = { HABITAT: [1,0,1], FERME: [2,0,0], INDUSTRIE: [0,1,2], RECYCLAGE: [1,1,1] };
+const RES_LABEL = { EAU: "Eau", ENERGIE: "Énergie", MATERIAU: "Matériaux", INCONNU: "Inconnu", AUCUN: "Aucun" };
+
+const $ = (id) => document.getElementById(id);
+const store = { get(k, d) { try { const v = localStorage.getItem("colony_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+                set(k, v) { try { localStorage.setItem("colony_" + k, JSON.stringify(v)); } catch (e) {} } };
+
+/* ---------- Etat affiche ---------- */
+const st = { running: false, paused: false, picks: { EAU: 0, ENERGIE: 0, MATERIAU: 0 },
+  inv: Object.fromEntries(ZONES.map(z => [z, { have: [0,0,0], built: 0 }])) };
+
+/* ---------- Formulaire de configuration ---------- */
+for (let m = 6; m <= 12; m++) $("cfgD").add(new Option(m + " min", m));
+document.querySelectorAll(".gis").forEach(s => {
+  [["?", "Inconnu"], ["W", "Eau (bleu)"], ["E", "Énergie (jaune)"], ["M", "Matériaux (rouge)"]].forEach(([v, t]) => s.add(new Option(t, v)));
+});
+const saved = store.get("cfg", null);
+if (saved) {
+  $("cfgD").value = saved.D; $("cfgS").value = saved.S; $("cfgSUnknown").checked = saved.SU;
+  document.querySelectorAll(".gis").forEach((s, i) => s.value = saved.G[i] || "?");
+  $("cfgO").value = saved.O; $("cfgC").checked = saved.C;
+} else { $("cfgD").value = 8; }
+$("cfgSUnknown").addEventListener("change", () => $("cfgS").disabled = $("cfgSUnknown").checked);
+$("cfgS").disabled = $("cfgSUnknown").checked;
+
+$("sendCfg").addEventListener("click", () => {
+  const G = [...document.querySelectorAll(".gis")].map(s => s.value);
+  const cfg = { D: +$("cfgD").value, S: Math.max(0, Math.min(100, +$("cfgS").value || 0)), SU: $("cfgSUnknown").checked,
+                G, O: +$("cfgO").value || 0, C: $("cfgC").checked };
+  store.set("cfg", cfg);
+  // une ligne par parametre (paquets BLE de 20 octets max)
+  [`#D=${cfg.D}`, `#S=${cfg.SU ? "?" : cfg.S}`, `#G=${G.join("")}`, `#O=${cfg.O}`, `#C=${cfg.C ? 1 : 0}`]
+    .forEach(l => send(l + "\n"));
+  addEvent("Configuration envoyée");
+});
+
+/* ---------- Boutons de commande ---------- */
+document.querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click", () => send(b.dataset.cmd)));
+$("stopBtn").addEventListener("click", emergencyStop);
+$("resumeBtn").addEventListener("click", () => send("r"));
+$("rawSend").addEventListener("click", () => { const v = $("raw").value.trim(); if (v) { send(v + "\n"); $("raw").value = ""; } });
+$("raw").addEventListener("keydown", e => { if (e.key === "Enter") $("rawSend").click(); });
+
+function emergencyStop() {
+  writeQueue.length = 0;            // l'arret passe devant tout le reste
+  send("q", true); setTimeout(() => send("q", true), 150);   // envoye deux fois par securite
+  try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
+  addEvent("ARRÊT D'URGENCE envoyé", "alerte");
+}
+
+/* ---------- Bluetooth (Web Bluetooth) ---------- */
+let device = null, writeChar = null, writing = false, demo = null;
+const writeQueue = [];
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+if (!navigator.bluetooth) {
+  const box = $("noBt"); box.hidden = false;
+  box.innerHTML = "<b>Bluetooth indisponible dans ce navigateur.</b><br>Android : ouvre cette page dans <b>Chrome</b> (et non dans l'aperçu de Claude). " +
+    "iPhone : Safari ne gère pas le Web Bluetooth, utilise l'appli gratuite <b>Bluefy</b>. Le mode démo fonctionne partout.";
+}
+
+$("btConnect").addEventListener("click", connect);
+$("btDisconnect").addEventListener("click", () => { if (demo) stopDemo(); if (device && device.gatt.connected) device.gatt.disconnect(); });
+$("demoBtn").addEventListener("click", () => demo ? stopDemo() : startDemo());
+
+async function connect() {
+  if (!navigator.bluetooth) { addEvent("Bluetooth non disponible ici", "alerte"); return; }
+  try {
+    const opts = $("showAll").checked
+      ? { acceptAllDevices: true, optionalServices: BLE_SERVICES }
+      : { filters: [{ namePrefix: "Makeblock" }, { services: [0xffe1] }], optionalServices: BLE_SERVICES };
+    device = await navigator.bluetooth.requestDevice(opts);
+    device.addEventListener("gattserverdisconnected", onDisconnected);
+    await openGatt();
+  } catch (e) {
+    const msg = String(e && e.message || e);
+    if (/permissions policy|not allowed|disallowed|SecurityError/i.test(msg))
+      addEvent("Bluetooth bloqué dans cette fenêtre : ouvre la page directement dans Chrome", "alerte");
+    else addEvent("Connexion annulée ou impossible : " + msg, "alerte");
+  }
+}
+
+async function openGatt() {
+  setConn("Connexion…", "");
+  const server = await device.gatt.connect();
+  let notif = null; writeChar = null;
+  for (const svc of await server.getPrimaryServices()) {
+    for (const ch of await svc.getCharacteristics()) {
+      if (!notif && (NOTIFY_UUIDS.includes(ch.uuid) || ch.properties.notify) && ch.properties.notify) notif = ch;
+      if (!writeChar && WRITE_UUIDS.includes(ch.uuid) && (ch.properties.write || ch.properties.writeWithoutResponse)) writeChar = ch;
+    }
+  }
+  if (!writeChar) {           // repli : premiere caracteristique inscriptible
+    for (const svc of await server.getPrimaryServices())
+      for (const ch of await svc.getCharacteristics())
+        if (!writeChar && (ch.properties.write || ch.properties.writeWithoutResponse)) writeChar = ch;
+  }
+  if (!notif || !writeChar) throw new Error("caractéristiques série introuvables sur ce module");
+  await notif.startNotifications();
+  notif.addEventListener("characteristicvaluechanged", e => onData(dec.decode(e.target.value)));
+  setConn("Connecté : " + (device.name || "robot"), "ok");
+  $("btDisconnect").disabled = false;
+  addEvent("Connecté au robot");
+  keepAwake();
+  send("i");                  // demande l'etat courant
+}
+
+let reconnectTries = 0;
+async function onDisconnected() {
+  writeChar = null; setConn("Déconnecté", "ko"); $("btDisconnect").disabled = true;
+  try { navigator.vibrate && navigator.vibrate([300, 100, 300]); } catch (e) {}
+  addEvent("Liaison Bluetooth perdue : le robot continue sans toi !", "alerte");
+  if (reconnectTries < 5 && device) {
+    reconnectTries++;
+    setTimeout(async () => { try { await openGatt(); reconnectTries = 0; } catch (e) { onDisconnected(); } }, 1000);
+  }
+}
+
+function setConn(t, cls) { const c = $("conn"); c.textContent = t; c.className = "pill " + cls; }
+
+function send(text, urgent) {
+  logLine("> " + text.trim());
+  if (demo) { demo.receive(text); return; }
+  if (!writeChar) { addEvent("Pas connecté : commande non envoyée", "alerte"); return; }
+  const bytes = enc.encode(text);
+  for (let i = 0; i < bytes.length; i += 20) {
+    const chunk = bytes.slice(i, i + 20);
+    urgent ? writeQueue.unshift(chunk) : writeQueue.push(chunk);
+  }
+  pump();
+}
+
+async function pump() {
+  if (writing || !writeChar) return;
+  writing = true;
+  while (writeQueue.length && writeChar) {
+    const chunk = writeQueue.shift();
+    try {
+      if (writeChar.properties.writeWithoutResponse && writeChar.writeValueWithoutResponse) await writeChar.writeValueWithoutResponse(chunk);
+      else await writeChar.writeValue(chunk);
+    } catch (e) { logLine("! écriture : " + e.message); await new Promise(r => setTimeout(r, 50)); }
+  }
+  writing = false;
+}
+
+let wakeLock = null;
+async function keepAwake() { try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && (writeChar || demo)) keepAwake(); });
+
+/* ---------- Lecture des messages du robot ---------- */
+let rxBuf = "";
+function onData(s) {
+  rxBuf += s;
+  let i;
+  while ((i = rxBuf.search(/\r?\n/)) >= 0) {
+    const line = rxBuf.slice(0, i).trim();
+    rxBuf = rxBuf.slice(rxBuf[i] === "\r" ? i + 2 : i + 1);
+    if (line) handleLine(line);
+  }
+  if (rxBuf.length > 500) rxBuf = "";
+}
+
+function kv(parts) { const o = {}; parts.forEach(p => { const m = p.match(/^([^=~]+)[=~](.*)$/); if (m) o[m[1]] = m[2]; }); return o; }
+
+function handleLine(line) {
+  if (!line.startsWith("TEL;")) logLine(line);
+  const p = line.split(";"), tag = p[0];
+  switch (tag) {
+    case "TEL": {
+      const o = kv(p.slice(1));
+      const t = +o.t || 0; $("kTime").textContent = Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
+      $("kPos").textContent = `${o.x}, ${o.y} · ${o.th}°`;
+      $("kS").textContent = "~" + o.S; setEtat(o.etat);
+      $("kCube").textContent = RES_LABEL[o.cube] || o.cube; $("kScore").textContent = o.score;
+      if (!st.running && !st.paused) setRunning(true);
+      break;
+    }
+    case "MODE": {
+      const m = p[1] || "";
+      $("kMode").textContent = m.toLowerCase();
+      if (m === "PAUSE") { setPaused(true); if (!st.pauseShown) { addEvent("Robot en pause : " + (p[2] || ""), "alerte"); st.pauseShown = true; } }
+      else if (m.startsWith("REPRISE")) { setPaused(false); setRunning(true); addEvent(m.toLowerCase()); }
+      else if (m === "MANCHE STANDARD" || m === "AUTO-TEST") { resetMatch(); setRunning(true); addEvent("Départ : " + m.toLowerCase()); }
+      else if (/FIN|TERMINE|INTERROMPU|ECHEC|ARRET|PRET/.test(m)) { setPaused(false); setRunning(false); addEvent(m.toLowerCase(), /ECHEC|INTERROMPU/.test(m) ? "alerte" : ""); }
+      break;
+    }
+    case "RES": $("lastRes").textContent = "Dernière ressource détectée : " + (RES_LABEL[p[1]] || p[1]) + (p[2] ? " (" + p[2] + ")" : ""); break;
+    case "PICK": if (st.picks[p[1]] !== undefined) st.picks[p[1]]++; renderPicks(); addEvent(`Ressource récupérée : ${RES_LABEL[p[1]] || p[1]} (gisement ${p[2] || "?"})`); break;
+    case "CIBLE": $("kTarget").textContent = p.slice(1).join(" · ").replace(/gisement=/, "gisement ").replace(/type=/, "type "); addEvent("Cible : " + p.slice(1).join(" · ").toLowerCase()); break;
+    case "DEPOT": addEvent(`Dépôt : ${RES_LABEL[p[1]] || p[1]} → ${p[2]}`); break;
+    case "INFRA": addEvent(`${p[1]} construite (total ${(p[2] || "").replace("total=", "")})`, "infra"); try { navigator.vibrate && navigator.vibrate(80); } catch (e) {} break;
+    case "INV": parseInv(p.slice(1)); break;
+    case "ETAT": { setEtat(p[1]); const o = kv(p.slice(2)); if (o.S) $("kS").textContent = "~" + o.S;
+      if ((o.source || "") === "carte") addEvent("Carte lue : territoire " + p[1].toLowerCase()); break; }
+    case "SCORE": { const o = kv(p.slice(1)); $("kScore").textContent = o.estime; addEvent("Score estimé : " + o.estime + " (" + (o.etat || "").toLowerCase() + ")", "infra"); break; }
+    case "ALERTE": addEvent("⚠ " + p.slice(1).join(" "), "alerte"); try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {} break;
+    case "CFG": $("cfgEcho").textContent = "Configuration confirmée par le robot : " + p.slice(1).join(" · "); break;
+    case "FIN": addEvent("Fin : " + p.slice(1).join(" ").toLowerCase(), "infra"); break;
+    case "STATUT": { const o = kv(p.slice(1)); if (o.mode !== undefined) { setRunning(o.mode !== "0"); setPaused(o.pause === "1"); } break; }
+  }
+}
+
+function parseInv(parts) {
+  parts.forEach(s => {
+    const m = s.match(/^(\w+)=(\d+)\/(\d+)\/(\d+) construits:(\d+)/);
+    if (m && st.inv[m[1]]) st.inv[m[1]] = { have: [+m[2], +m[3], +m[4]], built: +m[5] };
+  });
+  renderInv();
+}
+
+/* ---------- Affichage ---------- */
+function setEtat(e) { if (!e) return; const el = $("etat"); el.className = "etat e-" + e; el.textContent = "Territoire : " + e.toLowerCase(); }
+function setRunning(r) { st.running = r; document.body.classList.toggle("running", r);
+  document.querySelectorAll("#prep button, #prep select, #prep input").forEach(x => x.disabled = r || (x.id === "cfgS" && $("cfgSUnknown").checked)); }
+function setPaused(p) { st.paused = p; if (!p) st.pauseShown = false; $("pauseBox").classList.toggle("show", p); }
+function resetMatch() { st.picks = { EAU: 0, ENERGIE: 0, MATERIAU: 0 }; ZONES.forEach(z => st.inv[z] = { have: [0,0,0], built: 0 }); renderPicks(); renderInv(); $("events").innerHTML = ""; }
+function renderPicks() { $("rW").textContent = st.picks.EAU; $("rE").textContent = st.picks.ENERGIE; $("rM").textContent = st.picks.MATERIAU; }
+function renderInv() {
+  $("infra").innerHTML = ZONES.map(z => {
+    const r = RECIPE[z], h = st.inv[z].have;
+    const cell = i => r[i] ? `<td class="${h[i] >= r[i] ? "full" : ""}">${h[i]}/${r[i]}</td>` : `<td style="color:#555">–</td>`;
+    return `<tr><td>${z[0] + z.slice(1).toLowerCase()}</td>${cell(0)}${cell(1)}${cell(2)}<td><b>${st.inv[z].built}</b></td></tr>`;
+  }).join("");
+}
+function addEvent(t, cls) {
+  const li = document.createElement("li"); if (cls) li.className = cls;
+  const d = new Date(); li.innerHTML = `<span class="t">${d.toLocaleTimeString("fr-FR")}</span>`;
+  li.appendChild(document.createTextNode(t));
+  $("events").prepend(li);
+  while ($("events").children.length > 120) $("events").lastChild.remove();
+}
+function logLine(t) { const l = $("log"); l.textContent += t + "\n"; if (l.textContent.length > 20000) l.textContent = l.textContent.slice(-15000); l.scrollTop = l.scrollHeight; }
+renderInv(); renderPicks();
+
+/* ---------- Mode démo : faux robot pour essayer l'interface ---------- */
+function startDemo() {
+  setConn("Démo", "ok"); $("demoBtn").textContent = "Quitter le mode démo"; $("btDisconnect").disabled = false;
+  const say = (l) => setTimeout(() => onData(l + "\n"), 0);
+  let t0 = 0, timer = null, paused = false, S = 80, score = 0, k = 0, cube = "AUCUN";
+  const seq = [
+    ["CIBLE;INDUSTRIE;gisement=G1;type=INCONNU"], ["RES;ENERGIE", "PICK;ENERGIE;G1", "ETAT;STABLE;S~78;source=estimation", "CIBLE;INDUSTRIE"],
+    ["DEPOT;ENERGIE;INDUSTRIE", "INV;HABITAT=0/0/0 construits:0;FERME=0/0/0 construits:0;INDUSTRIE=0/1/0 construits:0;RECYCLAGE=0/0/0 construits:0"],
+    ["CIBLE;INDUSTRIE;gisement=G2;type=INCONNU"], ["RES;MATERIAU", "PICK;MATERIAU;G2", "CIBLE;INDUSTRIE"],
+    ["DEPOT;MATERIAU;INDUSTRIE", "INV;HABITAT=0/0/0 construits:0;FERME=0/0/0 construits:0;INDUSTRIE=0/1/1 construits:0;RECYCLAGE=0/0/0 construits:0"],
+    ["CIBLE;INDUSTRIE;gisement=G2;type=MATERIAU"], ["RES;MATERIAU", "PICK;MATERIAU;G2", "ETAT;ALERTE;S~70;source=estimation", "CIBLE;INDUSTRIE"],
+    ["DEPOT;MATERIAU;INDUSTRIE", "INFRA;INDUSTRIE;total=1", "INV;HABITAT=0/0/0 construits:0;FERME=0/0/0 construits:0;INDUSTRIE=0/0/0 construits:1;RECYCLAGE=0/0/0 construits:0"],
+    ["CIBLE;OBSERVATION ETAT TERRITOIRE"], ["ETAT;ALERTE;S~62;source=carte;derive_adv=3.0"],
+    ["CIBLE;HABITAT;gisement=G0;type=INCONNU"], ["RES;EAU", "PICK;EAU;G0", "CIBLE;HABITAT"],
+    ["DEPOT;EAU;HABITAT", "INV;HABITAT=1/0/0 construits:0;FERME=0/0/0 construits:0;INDUSTRIE=0/0/0 construits:1;RECYCLAGE=0/0/0 construits:0"],
+    ["CIBLE;HABITAT;gisement=G2;type=MATERIAU"], ["RES;MATERIAU", "PICK;MATERIAU;G2", "CIBLE;HABITAT"],
+    ["DEPOT;MATERIAU;HABITAT", "INFRA;HABITAT;total=1", "INV;HABITAT=0/0/0 construits:1;FERME=0/0/0 construits:0;INDUSTRIE=0/0/0 construits:1;RECYCLAGE=0/0/0 construits:0"]
+  ];
+  function tick() {
+    if (paused) return;
+    t0++;
+    if (t0 % 4 === 0 && k < seq.length) {
+      seq[k].forEach(l => { say(l); if (l.startsWith("PICK")) cube = l.split(";")[1]; if (l.startsWith("DEPOT")) cube = "AUCUN";
+        if (l.startsWith("INFRA;IND")) score += 11; if (l.startsWith("INFRA;HAB")) score += 5; const m = l.match(/S~(\d+)/); if (m) S = +m[1]; });
+      k++;
+    }
+    const etat = S >= 71 ? "STABLE" : S >= 51 ? "ALERTE" : S >= 31 ? "CRISE" : "CRITIQUE";
+    say(`TEL;t=${t0};x=${Math.round(30 * Math.sin(t0 / 5))};y=28;th=90;S=${S};etat=${etat};cube=${cube};score=${score}`);
+    if (k >= seq.length && t0 > seq.length * 4 + 3) { clearInterval(timer); timer = null; say("SCORE;estime=" + score + ";etat=" + etat); say("MODE;FIN MANCHE"); }
+  }
+  demo = { receive(text) {
+    for (const line of text.split("\n")) {
+      if (!line) continue;
+      if (line[0] === "#") { const c = line.slice(1); say("CFG;" + c + " (demo)"); continue; }
+      for (const ch of line) {
+        const c = ch.toLowerCase();
+        if (c === "q") { if (timer) { paused = true; say("MODE;PAUSE;ARRET D'URGENCE GOUVERNEUR"); } else say("MODE;ARRET"); }
+        else if (c === "r" && paused) { paused = false; say("MODE;REPRISE"); }
+        else if ((c === "h" || c === "j") && paused) { paused = false; say("MODE;REPRISE APRES REPLACEMENT"); say("MSG;" + (c === "h" ? "REPLACE SANS CUBE" : "REPLACE AVEC CUBE")); }
+        else if (c === "f" && timer) { clearInterval(timer); timer = null; paused = false; say("MODE;MANCHE INTERROMPUE"); }
+        else if (c === "z") say("MSG;BRAS INITIALISE (POSITION HAUTE)");
+        else if ((c === "s" || c === "t") && !timer) { t0 = 0; k = 0; S = 80; score = 0; cube = "AUCUN"; paused = false;
+          say("MODE;" + (c === "s" ? "MANCHE STANDARD" : "AUTO-TEST")); timer = setInterval(tick, 1000); }
+        else if (c === "i") say("STATUT;mode=" + (timer ? 1 : 0) + ";pause=" + (paused ? 1 : 0));
+        else if (!timer) say("MSG;test '" + c + "' (demo)");
+      }
+    }
+  }, stop() { if (timer) clearInterval(timer); } };
+  addEvent("Mode démo : envoie la config, puis « Lancer la manche »");
+}
+function stopDemo() { demo.stop(); demo = null; setConn("Déconnecté", "ko"); $("demoBtn").textContent = "Mode démo (sans robot)"; $("btDisconnect").disabled = true; setRunning(false); setPaused(false); }
+</script>
+</body>
+</html>
